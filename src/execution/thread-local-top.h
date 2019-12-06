@@ -26,7 +26,8 @@ class ThreadLocalTop {
   // TODO(all): This is not particularly beautiful. We should probably
   // refactor this to really consist of just Addresses and 32-bit
   // integer fields.
-  static constexpr uint32_t kSizeInBytes = 24 * kSystemPointerSize;
+  // For CET.
+  static constexpr uint32_t kSizeInBytes = 25 * kSystemPointerSize;
 
   // Does early low-level initialization that does not depend on the
   // isolate being present.
@@ -102,6 +103,8 @@ class ThreadLocalTop {
   Address pending_handler_constant_pool_ = kNullAddress;
   Address pending_handler_fp_ = kNullAddress;
   Address pending_handler_sp_ = kNullAddress;
+  // zxli add for CET.
+  long     pending_handler_skip_frames_ = 0;
 
   Address last_api_entry_ = kNullAddress;
 

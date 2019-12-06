@@ -2733,6 +2733,9 @@ void Builtins::Generate_CEntry(MacroAssembler* masm, int result_size,
       IsolateAddressId::kPendingHandlerFPAddress, masm->isolate());
   ExternalReference pending_handler_sp_address = ExternalReference::Create(
       IsolateAddressId::kPendingHandlerSPAddress, masm->isolate());
+  // zxli add for CET.
+  ExternalReference pending_handler_skip_frames_address = ExternalReference::Create(
+      IsolateAddressId::kPendingHandlerSkipFramesAddress, masm->isolate());
 
   // Ask the runtime for help to determine the handler. This will set rax to
   // contain the current pending exception, don't clobber it.
@@ -2746,6 +2749,12 @@ void Builtins::Generate_CEntry(MacroAssembler* masm, int result_size,
     __ PrepareCallCFunction(3);
     __ CallCFunction(find_handler, 3);
   }
+
+  // zxli add for CET.
+  __ movq(kScratchRegister,
+          masm->ExternalReferenceAsOperand(pending_handler_skip_frames_address));
+  __ incsspq(kScratchRegister);
+
   // Retrieve the handler context, SP and FP.
   __ movq(rsi,
           masm->ExternalReferenceAsOperand(pending_handler_context_address));
