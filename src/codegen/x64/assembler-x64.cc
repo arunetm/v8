@@ -2136,6 +2136,19 @@ void Assembler::popfq() {
   emit(0x9D);
 }
 
+// CET: INCSSP instruction.
+void Assembler::incsspq(Register src) {
+#if 1	
+  EnsureSpace ensure_space(this);
+  emit(0xF3);
+  // emit REX.W
+  emit_rex_64(src);
+  emit(0x0F);
+  emit(0xAE);
+  emit(0xC0 | src.low_bits());
+#endif  
+}
+
 void Assembler::pushq(Register src) {
   EnsureSpace ensure_space(this);
   emit_optional_rex_32(src);
