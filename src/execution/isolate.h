@@ -635,6 +635,8 @@ class V8_EXPORT_PRIVATE Isolate final : private HiddenFactory {
   THREAD_LOCAL_TOP_ADDRESS(Address, pending_handler_constant_pool)
   THREAD_LOCAL_TOP_ADDRESS(Address, pending_handler_fp)
   THREAD_LOCAL_TOP_ADDRESS(Address, pending_handler_sp)
+  // zxli add for CET.
+  THREAD_LOCAL_TOP_ADDRESS(long, pending_handler_skip_frames)
 
   THREAD_LOCAL_TOP_ACCESSOR(bool, external_caught_exception)
 

@@ -1533,6 +1533,7 @@ enum class BlockingBehavior { kBlock, kDontBlock };
 
 enum class ConcurrencyMode { kNotConcurrent, kConcurrent };
 
+// zxli add for CET. (PendingHandlerSkipFrames)
 #define FOR_EACH_ISOLATE_ADDRESS_NAME(C)                       \
   C(Handler, handler)                                          \
   C(CEntryFP, c_entry_fp)                                      \
@@ -1544,6 +1545,7 @@ enum class ConcurrencyMode { kNotConcurrent, kConcurrent };
   C(PendingHandlerConstantPool, pending_handler_constant_pool) \
   C(PendingHandlerFP, pending_handler_fp)                      \
   C(PendingHandlerSP, pending_handler_sp)                      \
+  C(PendingHandlerSkipFrames, pending_handler_skip_frames)     \
   C(ExternalCaughtException, external_caught_exception)        \
   C(JSEntrySP, js_entry_sp)
 
