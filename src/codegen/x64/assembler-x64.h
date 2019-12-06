@@ -477,6 +477,9 @@ class V8_EXPORT_PRIVATE Assembler : public AssemblerBase {
   void pushfq();
   void popfq();
 
+  // CET: INCSSP instruction.
+  void incsspq(Register src);
+
   void pushq(Immediate value);
   // Push a 32 bit integer, and guarantee that it is actually pushed as a
   // 32 bit value, the normal push will optimize the 8 bit case.

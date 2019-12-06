@@ -2532,11 +2532,24 @@ void Builtins::Generate_InterpreterOnStackReplacement(MacroAssembler* masm) {
   // Compute the target address = code_obj + header_size + osr_offset
   __ leaq(rax, FieldOperand(rax, rbx, times_1, Code::kHeaderSize));
 
+#if 0
   // Overwrite the return address on the stack.
   __ movq(StackOperandForReturnAddress(0), rax);
 
   // And "return" to the OSR entry point of the function.
   __ ret(0);
+#endif 
+
+  // CET: discards the useless ret addr on both stack and shadow stack.
+  // Throw away the current ret address on stack for running OSR code.
+  __ addq(rsp, Immediate(8)); 
+ 
+  // For CET compatible, remove the current ret address from Shadow stack.
+  __ movq(kScratchRegister, Immediate(1)); 
+  __ incsspq(kScratchRegister);
+
+  // run OSR code
+  __ jmp(rax);
 }
 
 void Builtins::Generate_WasmCompileLazy(MacroAssembler* masm) {
