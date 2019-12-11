@@ -225,7 +225,17 @@ class StackFrame {
   // up one word and become unaligned.
   Address UnpaddedFP() const;
 
-  Address pc() const { return *pc_address(); }
+  Address pc() const {
+    Address pc = *pc_address();
+    // zxli add for CET.
+    if ((pc >> 48) == kCetRetInValidFlag) {
+      // Need to recover to the right PC.
+      intptr_t d = pc;
+      pc = (d << 16) >> 16;
+    }
+    return pc;
+  }
+
   void set_pc(Address pc) { *pc_address() = pc; }
 
   Address constant_pool() const { return *constant_pool_address(); }

@@ -225,7 +225,9 @@ class V8_EXPORT_PRIVATE TurboAssembler : public TurboAssemblerBase {
 
   // Return and drop arguments from stack, where the number of arguments
   // may be bigger than 2^16 - 1.  Requires a scratch register.
-  void Ret(int bytes_dropped, Register scratch);
+  // zxli add for CET.
+  void Ret(int bytes_dropped, Register scratch = kScratchRegister,
+           bool check = true);
 
   // Load a register with a long value as efficiently as possible.
   void Set(Register dst, int64_t x);

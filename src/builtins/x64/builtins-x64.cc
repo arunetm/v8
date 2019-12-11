@@ -162,7 +162,7 @@ void Generate_JSBuiltinsConstructStubHelper(MacroAssembler* masm) {
   __ leaq(rsp, Operand(rsp, index.reg, index.scale, 1 * kSystemPointerSize));
   __ PushReturnAddressFrom(rcx);
 
-  __ ret(0);
+  __ Ret(0);
 
   __ bind(&stack_overflow);
   {
@@ -356,7 +356,7 @@ void Builtins::Generate_JSConstructStubGeneric(MacroAssembler* masm) {
   SmiIndex index = masm->SmiToIndex(rbx, rbx, kSystemPointerSizeLog2);
   __ leaq(rsp, Operand(rsp, index.reg, index.scale, 1 * kSystemPointerSize));
   __ PushReturnAddressFrom(rcx);
-  __ ret(0);
+  __ Ret(0);
 }
 
 void Builtins::Generate_JSBuiltinsConstructStub(MacroAssembler* masm) {
@@ -535,7 +535,7 @@ void Generate_JSEntryVariant(MacroAssembler* masm, StackFrame::Type type,
 
   // Restore frame pointer and return.
   __ popq(rbp);
-  __ ret(0);
+  __ Ret(0);
 }
 
 }  // namespace
@@ -671,7 +671,7 @@ static void Generate_JSEntryTrampolineHelper(MacroAssembler* masm,
     // invocation.
   }
 
-  __ ret(0);
+  __ Ret(0);
 }
 
 void Builtins::Generate_JSEntryTrampoline(MacroAssembler* masm) {
@@ -1194,7 +1194,7 @@ void Builtins::Generate_InterpreterEntryTrampoline(MacroAssembler* masm) {
   __ bind(&do_return);
   // The return value is in rax.
   LeaveInterpreterFrame(masm, rbx, rcx);
-  __ ret(0);
+  __ Ret(0);
 
   __ bind(&compile_lazy);
   GenerateTailCallToReturnedCode(masm, Runtime::kCompileLazy);
@@ -1398,6 +1398,11 @@ static void Generate_InterpreterEnterBytecode(MacroAssembler* masm) {
 
   __ bind(&trampoline_loaded);
   __ addq(rbx, Immediate(interpreter_entry_return_pc_offset.value()));
+  // zxli add for CET. Need to add cet return check.
+  __ movq(kScratchRegister, Immediate64(0x0000ffffffffffff));
+  __ andq(rbx, kScratchRegister);
+  __ movq(kScratchRegister, Immediate64(0xAAAA000000000000));
+  __ orq(rbx, kScratchRegister);
   __ Push(rbx);
 
   // Initialize dispatch table register.
@@ -1499,12 +1504,11 @@ void Generate_ContinueToBuiltinHelper(MacroAssembler* masm,
   // Replace the builtin index Smi on the stack with the instruction start
   // address of the builtin from the builtins table, and then Ret to this
   // address
-  __ movq(kScratchRegister, Operand(rsp, 0));
+  // zxli add for CET. Don't push/ret, just jump.
+  __ popq(kScratchRegister);
   __ movq(kScratchRegister,
           __ EntryFromBuiltinIndexAsOperand(kScratchRegister));
-  __ movq(Operand(rsp, 0), kScratchRegister);
-
-  __ Ret();
+  __ jmp(kScratchRegister);
 }
 }  // namespace
 
@@ -1536,7 +1540,7 @@ void Builtins::Generate_NotifyDeoptimized(MacroAssembler* masm) {
 
   DCHECK_EQ(kInterpreterAccumulatorRegister.code(), rax.code());
   __ movq(rax, Operand(rsp, kPCOnStackSize));
-  __ ret(1 * kSystemPointerSize);  // Remove rax.
+  __ Ret(1 * kSystemPointerSize);  // Remove rax.
 }
 
 // static
@@ -1888,7 +1892,7 @@ void Builtins::Generate_ArgumentsAdaptorTrampoline(MacroAssembler* masm) {
 
     // Leave frame and return.
     LeaveArgumentsAdaptorFrame(masm);
-    __ ret(0);
+    __ Ret(0);
   }
 
   // -------------------------------------------
@@ -2512,7 +2516,7 @@ void Builtins::Generate_InterpreterOnStackReplacement(MacroAssembler* masm) {
   // If the code object is null, just return to the caller.
   __ testq(rax, rax);
   __ j(not_equal, &skip, Label::kNear);
-  __ ret(0);
+  __ Ret(0);
 
   __ bind(&skip);
 
@@ -2532,11 +2536,24 @@ void Builtins::Generate_InterpreterOnStackReplacement(MacroAssembler* masm) {
   // Compute the target address = code_obj + header_size + osr_offset
   __ leaq(rax, FieldOperand(rax, rbx, times_1, Code::kHeaderSize));
 
+#if 0
   // Overwrite the return address on the stack.
   __ movq(StackOperandForReturnAddress(0), rax);
 
   // And "return" to the OSR entry point of the function.
   __ ret(0);
+#endif 
+
+  // CET: discards the useless ret addr on both stack and shadow stack.
+  // Throw away the current ret address on stack for running OSR code.
+  __ addq(rsp, Immediate(8)); 
+ 
+  // For CET compatible, remove the current ret address from Shadow stack.
+  __ movq(kScratchRegister, Immediate(1)); 
+  __ incsspq(kScratchRegister);
+
+  // run OSR code
+  __ jmp(rax);
 }
 
 void Builtins::Generate_WasmCompileLazy(MacroAssembler* masm) {
@@ -2706,7 +2723,7 @@ void Builtins::Generate_CEntry(MacroAssembler* masm, int result_size,
 
   // Exit the JavaScript to C++ exit frame.
   __ LeaveExitFrame(save_doubles == kSaveFPRegs, argv_mode == kArgvOnStack);
-  __ ret(0);
+  __ Ret(0);
 
   // Handling of exception.
   __ bind(&exception_returned);
@@ -2821,7 +2838,7 @@ void Builtins::Generate_DoubleToI(MacroAssembler* masm) {
   __ popq(save_reg);
   __ popq(scratch1);
   __ popq(rcx);
-  __ ret(0);
+  __ Ret(0);
 }
 
 namespace {
@@ -2957,12 +2974,14 @@ void CallApiFunctionAndReturn(MacroAssembler* masm, Register function_address,
 
   if (stack_space_operand == nullptr) {
     DCHECK_NE(stack_space, 0);
-    __ ret(stack_space * kSystemPointerSize);
+    __ Ret(stack_space * kSystemPointerSize);
   } else {
     DCHECK_EQ(stack_space, 0);
     __ PopReturnAddressTo(rcx);
     __ addq(rsp, rbx);
-    __ jmp(rcx);
+    // zxli add for CET. Must ret if the ret address is valid.
+    __ pushq(rcx);
+    __ Ret(0);
   }
 
   // Re-throw by promoting a scheduled exception.

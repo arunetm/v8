@@ -492,6 +492,13 @@ Code StackFrame::LookupCode() const {
 void StackFrame::IteratePc(RootVisitor* v, Address* pc_address,
                            Address* constant_pool_address, Code holder) {
   Address pc = *pc_address;
+  // zxli add for CET.
+  if ((pc >> 48) == kCetRetInValidFlag) {
+    // Need to recover to the right PC.
+    intptr_t d = pc;
+    pc = (d << 16) >> 16;
+  }
+  
   DCHECK(ReadOnlyHeap::Contains(holder) ||
          holder.GetHeap()->GcSafeCodeContains(holder, pc));
   unsigned pc_offset = static_cast<unsigned>(pc - holder.InstructionStart());
@@ -544,6 +551,13 @@ StackFrame::Type StackFrame::ComputeType(const StackFrameIteratorBase* iterator,
     }
   } else {
     Address pc = *(state->pc_address);
+    // zxli add for CET.
+    if ((pc >> 48) == kCetRetInValidFlag) {
+      // Need to recover to the right PC.
+      intptr_t d = pc;
+      pc = (d << 16) >> 16;
+    }
+
     // If the {pc} does not point into WebAssembly code we can rely on the
     // returned {wasm_code} to be null and fall back to {GetContainingCode}.
     wasm::WasmCodeRefScope code_ref_scope;

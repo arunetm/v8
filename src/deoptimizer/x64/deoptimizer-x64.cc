@@ -120,6 +120,13 @@ void Deoptimizer::GenerateDeoptimizationEntries(MacroAssembler* masm,
 
   // Remove the return address from the stack.
   __ addq(rsp, Immediate(kPCOnStackSize));
+  // CET: Remove the return address from the stack. need to update the shadow stack.
+  // CET: lazy bailout need to skip 2 return address (optimzed code and bailout handler).
+  if (deopt_kind != DeoptimizeKind::kLazy)
+    __ movq(kScratchRegister, Immediate(1));
+  else  // CET: lazy bailout need to skip 2 return address (optimzed code and bailout handler) 
+    __ movq(kScratchRegister, Immediate(2));
+  __ incsspq(kScratchRegister);
 
   // Compute a pointer to the unwinding limit in register rcx; that is
   // the first stack slot not part of the input frame.
@@ -212,7 +219,7 @@ void Deoptimizer::GenerateDeoptimizationEntries(MacroAssembler* masm,
           Immediate(1));
 
   // Return to the continuation point.
-  __ ret(0);
+  __ Ret(0);
 }
 
 Float32 RegisterValues::GetFloatRegister(unsigned n) const {
@@ -239,6 +246,13 @@ void FrameDescription::SetCallerFp(unsigned offset, intptr_t value) {
 void FrameDescription::SetCallerConstantPool(unsigned offset, intptr_t value) {
   // No embedded constant pool support.
   UNREACHABLE();
+}
+
+//zxli add for CET.
+intptr_t FrameDescription::SetCetRetCheckFlagToPc(intptr_t value) {
+  intptr_t d = kCetRetInValidFlag;
+  return (d<<48) | (value & 0x0000ffffffffffff);
+ // return (0xAAAA000000000000) | (value & 0x0000ffffffffffff);
 }
 
 #undef __

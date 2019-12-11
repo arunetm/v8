@@ -25,7 +25,7 @@ void DebugCodegen::GenerateHandleDebuggerStatement(MacroAssembler* masm) {
   __ MaybeDropFrames();
 
   // Return to caller.
-  __ ret(0);
+  __ Ret(0);
 }
 
 void DebugCodegen::GenerateFrameDropperTrampoline(MacroAssembler* masm) {

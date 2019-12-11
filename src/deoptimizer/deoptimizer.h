@@ -696,6 +696,9 @@ class FrameDescription {
 
   void SetCallerConstantPool(unsigned offset, intptr_t value);
 
+  // zxli add for CET.
+  intptr_t SetCetRetCheckFlagToPc(intptr_t value);
+
   intptr_t GetRegister(unsigned n) const {
     return register_values_.GetRegister(n);
   }

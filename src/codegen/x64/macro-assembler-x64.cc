@@ -2032,7 +2032,14 @@ void MacroAssembler::PopStackHandler() {
 
 void TurboAssembler::Ret() { ret(0); }
 
-void TurboAssembler::Ret(int bytes_dropped, Register scratch) {
+// zxli add for CET.
+void TurboAssembler::Ret(int bytes_dropped, Register scratch, bool check) {
+  // zxli add for CET. check the high 16-bit of ret PC before return.
+  Label cant_ret;
+  if (check) {
+    cmpw(Operand(rsp, 6), Immediate(kCetRetInValidFlag));
+    j(equal, &cant_ret);
+  }
   if (is_uint16(bytes_dropped)) {
     ret(bytes_dropped);
   } else {
@@ -2040,6 +2047,15 @@ void TurboAssembler::Ret(int bytes_dropped, Register scratch) {
     addq(rsp, Immediate(bytes_dropped));
     PushReturnAddressFrom(scratch);
     ret(0);
+  }
+  bind(&cant_ret);
+  // zxli add for CET. have to use pop/jump to return.
+  if (check) {
+    PopReturnAddressTo(scratch);
+    shlq(scratch, Immediate(16));
+    sarq(scratch, Immediate(16));
+    addq(rsp, Immediate(bytes_dropped));
+    jmp(scratch);
   }
 }
 

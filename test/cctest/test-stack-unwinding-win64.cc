@@ -37,14 +37,20 @@ class UnwindingWin64Callbacks {
     int iframe = 0;
     while (++iframe < max_frames) {
       uint64_t image_base;
-      PRUNTIME_FUNCTION function_entry = ::RtlLookupFunctionEntry(
-          CONTEXT_PC(context_record), &image_base, nullptr);
+      // zxli add for CET.
+      unsigned __int64 Rip = context_record.Rip;
+      if ((Rip >> 48) == v8::internal::kCetRetInValidFlag) {
+        // Need to recover to the right PC.
+        intptr_t d = Rip;
+        Rip = (d << 16) >> 16;
+      }
+      
+      PRUNTIME_FUNCTION function_entry = ::RtlLookupFunctionEntry(Rip, &image_base, nullptr);
       if (!function_entry) break;
 
       void* handler_data;
       uint64_t establisher_frame;
-      ::RtlVirtualUnwind(UNW_FLAG_NHANDLER, image_base,
-                         CONTEXT_PC(context_record), function_entry,
+      ::RtlVirtualUnwind(UNW_FLAG_NHANDLER, image_base, Rip, function_entry,
                          &context_record, &handler_data, &establisher_frame,
                          NULL);
     }

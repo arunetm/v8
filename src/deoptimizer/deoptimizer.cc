@@ -252,7 +252,13 @@ class ActivationsFinder : public ThreadVisitor {
           int trampoline_pc = safepoint.trampoline_pc();
           DCHECK_IMPLIES(code == topmost_, safe_to_deopt_);
           // Replace the current pc on the stack with the trampoline.
-          it.frame()->set_pc(code.raw_instruction_start() + trampoline_pc);
+#if 1
+	  //int bailout_handler_pc = it.frame()->SetCetRetCheckFlagToPc(code.raw_instruction_start() + trampoline_pc);
+	  intptr_t bailout_handler_pc = (0xAAAA000000000000) | (((code.raw_instruction_start() + trampoline_pc)) & 0x0000ffffffffffff);
+
+          it.frame()->set_pc(bailout_handler_pc);
+         // it.frame()->set_pc(code.raw_instruction_start() + trampoline_pc);
+#endif
         }
       }
     }
@@ -1055,8 +1061,11 @@ void Deoptimizer::DoComputeInterpretedFrame(TranslatedFrame* translated_frame,
               !goto_catch_handler
           ? builtins->builtin(Builtins::kInterpreterEnterBytecodeAdvance)
           : builtins->builtin(Builtins::kInterpreterEnterBytecodeDispatch);
-  output_frame->SetPc(
-      static_cast<intptr_t>(dispatch_builtin.InstructionStart()));
+  // zxli add for CET.
+  intptr_t pc_value =
+      static_cast<intptr_t>(dispatch_builtin.InstructionStart());
+  pc_value = output_frame->SetCetRetCheckFlagToPc(pc_value);
+  output_frame->SetPc(pc_value);
 
   // Update constant pool.
   if (FLAG_enable_embedded_constant_pool) {
@@ -1079,8 +1088,11 @@ void Deoptimizer::DoComputeInterpretedFrame(TranslatedFrame* translated_frame,
     output_frame->SetRegister(context_reg.code(), context_value);
     // Set the continuation for the topmost frame.
     Code continuation = builtins->builtin(Builtins::kNotifyDeoptimized);
-    output_frame->SetContinuation(
-        static_cast<intptr_t>(continuation.InstructionStart()));
+    // zxli add for CET.
+    intptr_t conti_value =
+        static_cast<intptr_t>(continuation.InstructionStart());
+    conti_value = output_frame->SetCetRetCheckFlagToPc(conti_value);
+    output_frame->SetContinuation(conti_value);
   }
 }
 
@@ -1176,6 +1188,8 @@ void Deoptimizer::DoComputeArgumentsAdaptorFrame(
   intptr_t pc_value = static_cast<intptr_t>(
       adaptor_trampoline.InstructionStart() +
       isolate_->heap()->arguments_adaptor_deopt_pc_offset().value());
+  // zxli add for CET.
+  pc_value = output_frame->SetCetRetCheckFlagToPc(pc_value);
   output_frame->SetPc(pc_value);
   if (FLAG_enable_embedded_constant_pool) {
     intptr_t constant_pool_value =
@@ -1316,6 +1330,8 @@ void Deoptimizer::DoComputeConstructStubFrame(TranslatedFrame* translated_frame,
           ? isolate_->heap()->construct_stub_create_deopt_pc_offset().value()
           : isolate_->heap()->construct_stub_invoke_deopt_pc_offset().value();
   intptr_t pc_value = static_cast<intptr_t>(start + pc_offset);
+  // zxli add for CET.
+  pc_value = output_frame->SetCetRetCheckFlagToPc(pc_value);
   output_frame->SetPc(pc_value);
 
   // Update constant pool.
@@ -1344,8 +1360,11 @@ void Deoptimizer::DoComputeConstructStubFrame(TranslatedFrame* translated_frame,
     Builtins* builtins = isolate_->builtins();
     DCHECK_EQ(DeoptimizeKind::kLazy, deopt_kind_);
     Code continuation = builtins->builtin(Builtins::kNotifyDeoptimized);
-    output_frame->SetContinuation(
-        static_cast<intptr_t>(continuation.InstructionStart()));
+    // zxli add for CET.
+    intptr_t conti_value =
+        static_cast<intptr_t>(continuation.InstructionStart());
+    conti_value = output_frame->SetCetRetCheckFlagToPc(conti_value);
+    output_frame->SetContinuation(conti_value);
   }
 }
 
@@ -1695,13 +1714,26 @@ void Deoptimizer::DoComputeBuiltinContinuation(
   Code continue_to_builtin =
       isolate()->builtins()->builtin(TrampolineForBuiltinContinuation(
           mode, frame_info.frame_has_result_stack_slot()));
+#if 0
   output_frame->SetPc(
       static_cast<intptr_t>(continue_to_builtin.InstructionStart()));
+#endif
+  // zxli add for CET.
+  intptr_t pc_value =
+      static_cast<intptr_t>(continue_to_builtin.InstructionStart());
+  pc_value = output_frame->SetCetRetCheckFlagToPc(pc_value);
+  output_frame->SetPc(pc_value);
 
   Code continuation =
       isolate()->builtins()->builtin(Builtins::kNotifyDeoptimized);
+#if 0
   output_frame->SetContinuation(
       static_cast<intptr_t>(continuation.InstructionStart()));
+#endif
+  // zxli add for CET.
+  intptr_t conti_value = static_cast<intptr_t>(continuation.InstructionStart());
+  conti_value = output_frame->SetCetRetCheckFlagToPc(conti_value);
+  output_frame->SetContinuation(conti_value);  
 }
 
 void Deoptimizer::MaterializeHeapObjects() {

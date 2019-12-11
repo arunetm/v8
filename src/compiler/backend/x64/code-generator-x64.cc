@@ -4565,16 +4565,32 @@ void CodeGenerator::AssembleReturn(InstructionOperand* pop) {
     }
   }
 
+  // zxli add for CET.
+  OptimizedCompilationInfo* info = this->info();
+
   if (pop->IsImmediate()) {
     pop_size += g.ToConstant(pop).ToInt32() * kSystemPointerSize;
     CHECK_LT(pop_size, static_cast<size_t>(std::numeric_limits<int>::max()));
-    __ Ret(static_cast<int>(pop_size), rcx);
+    // zxli add for CET. only interpreter frame and BUILTIN frame need to be
+    // checked.
+    if (info->code_kind() == Code::BYTECODE_HANDLER ||
+        info->code_kind() == Code::BUILTIN ||
+        info->code_kind() == Code::OPTIMIZED_FUNCTION ||
+        info->code_kind() == Code::JS_TO_WASM_FUNCTION)
+      __ Ret(static_cast<int>(pop_size), rcx, true);
+    else
+      __ Ret(static_cast<int>(pop_size), rcx, false);
   } else {
     Register pop_reg = g.ToRegister(pop);
     Register scratch_reg = pop_reg == rcx ? rdx : rcx;
     __ popq(scratch_reg);
     __ leaq(rsp, Operand(rsp, pop_reg, times_8, static_cast<int>(pop_size)));
-    __ jmp(scratch_reg);
+    // zxli add for CET. Have to use ret instead of jmp in CET.
+    __ pushq(scratch_reg);
+    if (info->code_kind() == Code::BYTECODE_HANDLER || info->code_kind() == Code::BUILTIN)
+      __ Ret(0, scratch_reg, true);
+    else
+      __ Ret(0, scratch_reg, false);
   }
 }
 

@@ -16,6 +16,9 @@ namespace internal {
 constexpr int kRootRegisterBias = kSystemPointerSize == kTaggedSize ? 128 : 0;
 
 constexpr size_t kMaxPCRelativeCodeRangeInMB = 2048;
+
+// zxli add for CET.
+constexpr int kCetRetInValidFlag = 0xAAAA;
 }  // namespace internal
 }  // namespace v8
 
