@@ -226,6 +226,9 @@ class StackFrame {
   Address UnpaddedFP() const;
 
   Address pc() const {
+    if (!FLAG_enable_cet)
+      return *pc_address();
+
     Address pc = *pc_address();
     // zxli add for CET.
     if ((pc >> 48) == kCetRetInValidFlag) {

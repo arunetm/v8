@@ -104,6 +104,16 @@ void CpuFeatures::ProbeImpl(bool cross_compile) {
   } else if (strcmp(FLAG_mcpu, "atom") == 0) {
     supported_ |= 1u << ATOM;
   }
+
+  // For Intel CET availability check.
+  // arunetm todo: limit to api supported windows only.
+  // arunetm todo: enable CET support for non windows platforms.
+#if V8_OS_WIN
+  // constexpr int user_cet_environment_win32_process = 0x00000000;
+  // FLAG_enable_cet = FLAG_enable_cet &
+  // IsUserCetAvailableInEnvironment(user_cet_environment_win32_process);
+  FLAG_enable_cet = FLAG_enable_cet & true;
+#endif
 }
 
 void CpuFeatures::PrintTarget() {}
@@ -2061,16 +2071,16 @@ void Assembler::popfq() {
 
 // CET: INCSSP instruction.
 void Assembler::incsspq(Register src) {
-#if 1	
-  EnsureSpace ensure_space(this);
-  emit(0xF3);
-  // emit REX.W
-  emit_rex_64(src);
-  emit(0x0F);
-  emit(0xAE);
-  emit(0xE8 | src.low_bits());
-#endif  
-}
+  if (FLAG_enable_cet) {
+    EnsureSpace ensure_space(this);
+    emit(0xF3);
+    // emit REX.W
+    emit_rex_64(src);
+    emit(0x0F);
+    emit(0xAE);
+    emit(0xE8 | src.low_bits());
+  }
+ }
 
 void Assembler::pushq(Register src) {
   EnsureSpace ensure_space(this);

@@ -493,7 +493,7 @@ void StackFrame::IteratePc(RootVisitor* v, Address* pc_address,
                            Address* constant_pool_address, Code holder) {
   Address pc = *pc_address;
   // zxli add for CET.
-  if ((pc >> 48) == kCetRetInValidFlag) {
+  if (FLAG_enable_cet && (pc >> 48) == kCetRetInValidFlag) {
     // Need to recover to the right PC.
     intptr_t d = pc;
     pc = (d << 16) >> 16;
@@ -552,7 +552,7 @@ StackFrame::Type StackFrame::ComputeType(const StackFrameIteratorBase* iterator,
   } else {
     Address pc = *(state->pc_address);
     // zxli add for CET.
-    if ((pc >> 48) == kCetRetInValidFlag) {
+    if (FLAG_enable_cet && (pc >> 48) == kCetRetInValidFlag) {
       // Need to recover to the right PC.
       intptr_t d = pc;
       pc = (d << 16) >> 16;

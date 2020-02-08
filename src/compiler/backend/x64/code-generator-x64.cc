@@ -4573,10 +4573,11 @@ void CodeGenerator::AssembleReturn(InstructionOperand* pop) {
     CHECK_LT(pop_size, static_cast<size_t>(std::numeric_limits<int>::max()));
     // zxli add for CET. only interpreter frame and BUILTIN frame need to be
     // checked.
-    if (info->code_kind() == Code::BYTECODE_HANDLER ||
+    if (FLAG_enable_cet &&
+        (info->code_kind() == Code::BYTECODE_HANDLER ||
         info->code_kind() == Code::BUILTIN ||
         info->code_kind() == Code::OPTIMIZED_FUNCTION ||
-        info->code_kind() == Code::JS_TO_WASM_FUNCTION)
+        info->code_kind() == Code::JS_TO_WASM_FUNCTION))
       __ Ret(static_cast<int>(pop_size), rcx, true);
     else
       __ Ret(static_cast<int>(pop_size), rcx, false);
@@ -4586,6 +4587,9 @@ void CodeGenerator::AssembleReturn(InstructionOperand* pop) {
     __ popq(scratch_reg);
     __ leaq(rsp, Operand(rsp, pop_reg, times_8, static_cast<int>(pop_size)));
     // zxli add for CET. Have to use ret instead of jmp in CET.
+    if (!FLAG_enable_cet) {
+      __ jmp(scratch_reg);
+    }
     __ pushq(scratch_reg);
     if (info->code_kind() == Code::BYTECODE_HANDLER || info->code_kind() == Code::BUILTIN)
       __ Ret(0, scratch_reg, true);
