@@ -104,6 +104,16 @@ void CpuFeatures::ProbeImpl(bool cross_compile) {
   } else if (strcmp(FLAG_mcpu, "atom") == 0) {
     supported_ |= 1u << ATOM;
   }
+
+  //For Intel CET availability check.
+  //arunetm todo: limit to api supported windows only.
+  //arunetm todo: enable CET support for non windows platforms.
+#if V8_OS_WIN
+  // constexpr int user_cet_environment_win32_process = 0x00000000;
+  // FLAG_enable_cet = FLAG_enable_cet & IsUserCetAvailableInEnvironment(user_cet_environment_win32_process);
+  FLAG_enable_cet = FLAG_enable_cet & true;
+#endif
+
 }
 
 void CpuFeatures::PrintTarget() {}

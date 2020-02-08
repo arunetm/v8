@@ -2036,7 +2036,7 @@ void TurboAssembler::Ret() { ret(0); }
 void TurboAssembler::Ret(int bytes_dropped, Register scratch, bool check) {
   // zxli add for CET. check the high 16-bit of ret PC before return.
   Label cant_ret;
-  if (check) {
+  if (check && FLAG_enable_cet) {
     cmpw(Operand(rsp, 6), Immediate(kCetRetInValidFlag));
     j(equal, &cant_ret);
   }
