@@ -99,11 +99,24 @@ void CpuFeatures::ProbeImpl(bool cross_compile) {
   if (cpu.has_bmi2() && FLAG_enable_bmi2) supported_ |= 1u << BMI2;
   if (cpu.has_lzcnt() && FLAG_enable_lzcnt) supported_ |= 1u << LZCNT;
   if (cpu.has_popcnt() && FLAG_enable_popcnt) supported_ |= 1u << POPCNT;
-  if (strcmp(FLAG_mcpu, "auto") == 0) {
-    if (cpu.is_atom()) supported_ |= 1u << ATOM;
-  } else if (strcmp(FLAG_mcpu, "atom") == 0) {
-    supported_ |= 1u << ATOM;
+  //arunetm: for CET
+  if (cpu.has_cet() && FLAG_enable_cet) {
+  
+    // CET only supported for win10 running on TGL.
+    // Todo enable for linux
+#if defined(V8_OS_WIN_X64)
+    //constexpr int USER_CET_ENVIRONMENT_WIN32_PROCESS = 0x00000000;
+    if (true /*IsUserCetAvailableInEnvironment(USER_CET_ENVIRONMENT_WIN32_PROCESS)*/) {
+      supported_ |= 1u << CET;
+    }
+#endif
   }
+  if (cpu.has_cet() && FLAG_enable_cet) supported_ |= 1u << CET;
+    if (strcmp(FLAG_mcpu, "auto") == 0) {
+      if (cpu.is_atom()) supported_ |= 1u << ATOM;
+    } else if (strcmp(FLAG_mcpu, "atom") == 0) {
+      supported_ |= 1u << ATOM;
+    }
 }
 
 void CpuFeatures::PrintTarget() {}
@@ -2139,6 +2152,7 @@ void Assembler::popfq() {
 // CET: INCSSP instruction.
 void Assembler::incsspq(Register src) {
 #if 0	
+//arunetm: feature flag
   EnsureSpace ensure_space(this);
   emit(0xF3);
   // emit REX.W
@@ -2146,7 +2160,7 @@ void Assembler::incsspq(Register src) {
   emit(0x0F);
   emit(0xAE);
   emit(0xE8 | src.low_bits());
-#endif  
+#endif
 }
 
 void Assembler::pushq(Register src) {
