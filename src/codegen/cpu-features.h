@@ -26,6 +26,7 @@ enum CpuFeature {
   LZCNT,
   POPCNT,
   ATOM,
+  CET,
 
 #elif V8_TARGET_ARCH_ARM || V8_TARGET_ARCH_ARM64
   // - Standard configurations. The baseline is ARMv6+VFPv2.

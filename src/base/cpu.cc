@@ -38,6 +38,7 @@ extern "C" char** environ;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <algorithm>
 
 #include "src/base/logging.h"
@@ -87,27 +88,27 @@ static V8_INLINE void __cpuid(int cpu_info[4], int info_type) {
  * HWCAP flags - for elf_hwcap (in kernel) and AT_HWCAP
  */
 #define HWCAP_SWP (1 << 0)
-#define HWCAP_HALF  (1 << 1)
+#define HWCAP_HALF (1 << 1)
 #define HWCAP_THUMB (1 << 2)
-#define HWCAP_26BIT (1 << 3)  /* Play it safe */
+#define HWCAP_26BIT (1 << 3) /* Play it safe */
 #define HWCAP_FAST_MULT (1 << 4)
 #define HWCAP_FPA (1 << 5)
 #define HWCAP_VFP (1 << 6)
-#define HWCAP_EDSP  (1 << 7)
-#define HWCAP_JAVA  (1 << 8)
-#define HWCAP_IWMMXT  (1 << 9)
-#define HWCAP_CRUNCH  (1 << 10)
+#define HWCAP_EDSP (1 << 7)
+#define HWCAP_JAVA (1 << 8)
+#define HWCAP_IWMMXT (1 << 9)
+#define HWCAP_CRUNCH (1 << 10)
 #define HWCAP_THUMBEE (1 << 11)
-#define HWCAP_NEON  (1 << 12)
+#define HWCAP_NEON (1 << 12)
 #define HWCAP_VFPv3 (1 << 13)
-#define HWCAP_VFPv3D16  (1 << 14) /* also set for VFPv4-D16 */
+#define HWCAP_VFPv3D16 (1 << 14) /* also set for VFPv4-D16 */
 #define HWCAP_TLS (1 << 15)
 #define HWCAP_VFPv4 (1 << 16)
 #define HWCAP_IDIVA (1 << 17)
 #define HWCAP_IDIVT (1 << 18)
-#define HWCAP_VFPD32  (1 << 19) /* set if VFP has 32 regs (not 16) */
-#define HWCAP_IDIV  (HWCAP_IDIVA | HWCAP_IDIVT)
-#define HWCAP_LPAE  (1 << 20)
+#define HWCAP_VFPD32 (1 << 19) /* set if VFP has 32 regs (not 16) */
+#define HWCAP_IDIV (HWCAP_IDIVA | HWCAP_IDIVT)
+#define HWCAP_LPAE (1 << 20)
 
 static uint32_t ReadELFHWCaps() {
 #if V8_GLIBC_PREREQ(2, 16)
@@ -152,7 +153,6 @@ int __detect_fp64_mode(void) {
 
   return !(result == 1);
 }
-
 
 int __detect_mips_arch_revision(void) {
   // TODO(dusmil): Do the specific syscall as soon as it is implemented in mips
@@ -200,7 +200,7 @@ class CPUInfo final {
     data_ = new char[datalen_ + 1];
     fp = fopen(PATHNAME, "r");
     if (fp != nullptr) {
-      for (size_t offset = 0; offset < datalen_; ) {
+      for (size_t offset = 0; offset < datalen_;) {
         size_t n = fread(data_ + offset, 1, datalen_ - offset, fp);
         if (n == 0) {
           break;
@@ -214,9 +214,7 @@ class CPUInfo final {
     data_[datalen_] = '\0';
   }
 
-  ~CPUInfo() {
-    delete[] data_;
-  }
+  ~CPUInfo() { delete[] data_; }
 
   // Extract the content of a the first occurrence of a given field in
   // the content of the cpuinfo file and return it as a heap-allocated
@@ -326,6 +324,7 @@ CPU::CPU()
       has_bmi2_(false),
       has_lzcnt_(false),
       has_popcnt_(false),
+      has_cet_(false),
       has_idiva_(false),
       has_neon_(false),
       has_thumb2_(false),
@@ -374,6 +373,10 @@ CPU::CPU()
     has_osxsave_ = (cpu_info[2] & 0x08000000) != 0;
     has_avx_ = (cpu_info[2] & 0x10000000) != 0;
     has_fma3_ = (cpu_info[2] & 0x00001000) != 0;
+
+    //arunetm for CET - only supported for win10 TGL
+    //Todo: qualify for TGL
+    has_cet_ = true;
 
     if (family_ == 0x6) {
       switch (model_) {
@@ -600,7 +603,7 @@ CPU::CPU()
 #endif
 
 #elif V8_HOST_ARCH_ARM64
-// Implementer, variant and part are currently unused under ARM64.
+  // Implementer, variant and part are currently unused under ARM64.
 
 #elif V8_HOST_ARCH_PPC
 
