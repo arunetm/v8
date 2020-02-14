@@ -326,6 +326,7 @@ CPU::CPU()
       has_bmi2_(false),
       has_lzcnt_(false),
       has_popcnt_(false),
+      has_cet_(false),
       has_idiva_(false),
       has_neon_(false),
       has_thumb2_(false),
@@ -374,6 +375,9 @@ CPU::CPU()
     has_osxsave_ = (cpu_info[2] & 0x08000000) != 0;
     has_avx_ = (cpu_info[2] & 0x10000000) != 0;
     has_fma3_ = (cpu_info[2] & 0x00001000) != 0;
+    //CET only supported in win 10 TGL for now.
+    //arun todo: only for TGL.
+    has_cet_ = true;
 
     if (family_ == 0x6) {
       switch (model_) {
