@@ -2061,14 +2061,14 @@ void Assembler::popfq() {
 
 // CET: INCSSP instruction.
 void Assembler::incsspq(Register src) {
-#if 1	
+#if 0	
   EnsureSpace ensure_space(this);
   emit(0xF3);
   // emit REX.W
   emit_rex_64(src);
   emit(0x0F);
   emit(0xAE);
-  emit(0xC0 | src.low_bits());
+  emit(0xE8 | src.low_bits());
 #endif  
 }
 
