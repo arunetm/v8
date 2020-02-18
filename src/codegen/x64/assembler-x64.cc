@@ -112,11 +112,12 @@ void CpuFeatures::ProbeImpl(bool cross_compile) {
 #endif
   }
   if (cpu.has_cet() && FLAG_enable_cet) supported_ |= 1u << CET;
-    if (strcmp(FLAG_mcpu, "auto") == 0) {
-      if (cpu.is_atom()) supported_ |= 1u << ATOM;
-    } else if (strcmp(FLAG_mcpu, "atom") == 0) {
-      supported_ |= 1u << ATOM;
-    }
+
+  if (strcmp(FLAG_mcpu, "auto") == 0) {
+    if (cpu.is_atom()) supported_ |= 1u << ATOM;
+  } else if (strcmp(FLAG_mcpu, "atom") == 0) {
+    supported_ |= 1u << ATOM;
+  }
 }
 
 void CpuFeatures::PrintTarget() {}
@@ -2151,7 +2152,7 @@ void Assembler::popfq() {
 
 // CET: INCSSP instruction.
 void Assembler::incsspq(Register src) {
-#if 0	
+#if 0
 //arunetm: feature flag
   EnsureSpace ensure_space(this);
   emit(0xF3);
