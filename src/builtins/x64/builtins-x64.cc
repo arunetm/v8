@@ -2532,15 +2532,13 @@ void Builtins::Generate_InterpreterOnStackReplacement(MacroAssembler* masm) {
   // Compute the target address = code_obj + header_size + osr_offset
   __ leaq(rax, FieldOperand(rax, rbx, times_1, Code::kHeaderSize));
 
-#if 0
-  // Overwrite the return address on the stack.
-  __ movq(StackOperandForReturnAddress(0), rax);
+  //For CET
+  Label skipCET;
+  __ movq(kScratchRegister, Immediate(masm->isolate()->is_cet_enabled()));
+  __ testq(kScratchRegister, kScratchRegister);
+  __ j(zero, &skipCET, Label::kNear);
 
-  // And "return" to the OSR entry point of the function.
-  __ ret(0);
-#endif 
-
-  // CET: discards the useless ret addr on both stack and shadow stack.
+  // Zxli CET: discards the useless ret addr on both stack and shadow stack.
   // Throw away the current ret address on stack for running OSR code.
   __ addq(rsp, Immediate(8)); 
  
@@ -2550,6 +2548,14 @@ void Builtins::Generate_InterpreterOnStackReplacement(MacroAssembler* masm) {
 
   // run OSR code
   __ jmp(rax);
+
+  __ bind(&skipCET);
+
+  // Overwrite the return address on the stack.
+  __ movq(StackOperandForReturnAddress(0), rax);
+
+  // And "return" to the OSR entry point of the function.
+  __ ret(0);
 }
 
 void Builtins::Generate_WasmCompileLazy(MacroAssembler* masm) {

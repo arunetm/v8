@@ -435,6 +435,7 @@ using DebugObjectCache = std::vector<Handle<HeapObject>>;
   V(int, last_stack_frame_info_id, 0)                                          \
   V(int, last_console_context_id, 0)                                           \
   V(v8_inspector::V8Inspector*, inspector, nullptr)                            \
+  V(int, is_cet_enabled, CpuFeatures::IsSupported(CET))                        \
   V(bool, next_v8_call_is_safe_for_termination, false)                         \
   V(bool, only_terminate_in_safe_scope, false)                                 \
   V(bool, detailed_source_positions_for_profiling, FLAG_detailed_line_info)
